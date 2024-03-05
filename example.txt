@@ -1,0 +1,8 @@
+escribir
+       
+    hasta
+     caso nulo cierto
+
+ escribir otro
+    mientras 
+retorno

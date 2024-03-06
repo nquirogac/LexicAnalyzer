@@ -1,8 +1,9 @@
-escribir
-       
-    hasta
-     caso nulo cierto
+ESCRIBIR escribir 
 
- escribir otro
-    mientras 
-retorno
+Escribir Mi_Variable
+
+MI_VARIABLE
+
+MI_Variable
+
+mIENtras MIENTRAS mientras 

@@ -8,22 +8,32 @@ operatorsKeys = "|".join(operators.keys())
 idsRegex = "^[a-zA-Z_][a-zA-Z0-9_]*" 
 commentsRegex = "//|#"
 multiLineCommentsRegex = "^(/*)."
+numbersRegex = "\d+(\.\d+)?"
+stringRegex = r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\''
 
 
 file = open('example.txt', 'r')
 lines = file.readlines()
 file.close()
 
-def maximalToken(line, flag, j):
+def maximalToken(line, flag, j, num=False):
     if (j+1 == len(line)):
         return True
-    elif (j+1 < len(line) ):              #if the word is a space
+    elif (j+1 < len(line) ):              #if the token is a space
             if (line[j+1] == " "): 
                 return True
             elif (line[j+1] == "\n"): 
                 return True     
-            elif (re.match(operatorsKeys, line[j+1])):
+            elif (re.match(operatorsKeys, line[j+1]) and not num):
                 return True
+            elif(num):
+                #print(line[flag:j+2], line[j+1])
+                if (re.match("\d", line[j+1])):
+                    return False
+                elif (re.match("\.", line[j+1])) and maximalToken(line, flag, j+1, True):
+                    return True 
+                elif (re.fullmatch(numbersRegex, line[flag:j+3]))==None:
+                    return True
     else:
         return False
 
@@ -34,7 +44,10 @@ def findOperators(line, flag, j):
               
 def defineOperators(line, flag, j):
     #print(1,line[flag:j+1], flag, j, len(line))
-    if (j+1 <= len(line) and ((line[j+1] == " ") or (line[j+1] == "\n") or (j+1 == len(line)))):              #if the word is a space
+    if (j+1 == len(line)):
+        findOperators(line, flag, j)
+        return True
+    elif (j+1 <= len(line) and ((line[j+1] == " ") or (line[j+1] == "\n") or (j+1 == len(line)))):              #if the token is a space
         findOperators(line, flag, j)
         return True
     elif (re.match(commentsRegex, line[flag:j+2])): 
@@ -56,8 +69,9 @@ for i in range(len(lines)):
     if not line.strip():
         continue
     for j in range(0,len(line)):
+        
         #print(line[flag:j+1], flag, j, len(line))
-        if (re.match(keyWords, line[flag:j+1])):                 #if the word is a keyword
+        if (re.match(keyWords, line[flag:j+1])):           #if the token is a keyword
             #print(line[flag:j+1], flag, j, len(line))
             if (maximalToken(line, flag, j)):
                 print("<"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
@@ -69,21 +83,30 @@ for i in range(len(lines)):
         elif (re.match(commentsRegex, line[flag:j+2])):
             print("comentario")
             break
-        elif(re.match(operatorsKeys, line[flag:j+1])):            #if the word is an operator or special character
+        
+        elif(re.match(operatorsKeys, line[flag:j+1])):     #if the token is an operator or special character
             #print("ddd")
             if(defineOperators(line, flag, j)):
                 flag = j+1
             else:
-                continue 
-        
-        elif (re.match(idsRegex, line[flag:j+1])):              #if the word is an identifier
+                continue        
+        elif (re.match(idsRegex, line[flag:j+1])):         #if the token is an identifier
             if (maximalToken(line, flag, j)):
                 #print("dfs",line[flag:j+1], flag, j, len(line))
                 print("<id,"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
             else:
                 continue
-        elif (j+1 < len(line) ):              #if the word is a space
-            if (line[j] == " "):  
+        
+        elif (re.match(numbersRegex, line[flag:j+1])):     #if the token is a number
+            #print(1,line[flag:j+1])
+            if(maximalToken(line, flag, j, True)):
+                print("<tkn_real,"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
         
+        
+        
+        elif (j+1 < len(line) ):                           #if the token is a space
+            if (line[j] == " "):  
+                flag = j+1
+     

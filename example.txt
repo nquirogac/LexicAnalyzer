@@ -1,5 +1,1 @@
-#### It is pretty flexible
-   repetir en falso o sino
-
-   // this is for open source enjoyers
-         en verdadero Nene // perfect
+para i en rango(10)

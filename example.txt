@@ -6,4 +6,4 @@ MI_VARIABLE
 
 MI_Variable
 
-mIENtras MIENTRAS mientras 
+mIENtras MIENTRAS mientras

@@ -6,6 +6,9 @@ operators = {"(&&)": "and", "\|\|": "or", "\.\.": "concat", "(\.)": "period", "(
 operatorsKeys = "|".join(operators.keys())
 
 idsRegex = "^[a-zA-Z_][a-zA-Z0-9_]*" 
+commentsRegex = "^(//).|#"
+multiLineCommentsRegex = "^(/*)."
+
 
 file = open('example.txt', 'r')
 lines = file.readlines()
@@ -24,7 +27,7 @@ def maximalToken(line, flag, j):
     else:
         return False
 def defineOperators(line, flag, j):
-    print(line[flag:j], flag, j, len(line))
+    #print(line[flag:j], flag, j, len(line))
     for key in operators:
         if j+2 < len(line) and (re.match(key, line[flag:j+2])):
             """ print(key)
@@ -52,7 +55,9 @@ for i in range(len(lines)):
                 #print(flag,j, len(line))
             else:
                 continue  
-        
+        elif (re.match(commentsRegex, line[flag:j+2])):
+            print("comentario")
+            break
         elif(re.match(operatorsKeys, line[flag:j+1])):            #if the word is an operator or special character
             #print("ddd")
             if(defineOperators(line, flag, j)):
@@ -70,3 +75,4 @@ for i in range(len(lines)):
         elif (j+1 < len(line) ):              #if the word is a space
             if (line[j] == " "):  
                 flag = j+1
+        

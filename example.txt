@@ -1,9 +1,6 @@
-ESCRIBIR escribir 
+#### It is pretty flexible
+   repetir en falso o sino
 
-Escribir Mi_Variable
-
-MI_VARIABLE
-
-MI_Variable
-
-mIENtras MIENTRAS mientras
+   // this is for open source enjoyers
+         en verdadero Nene // perfect
+   

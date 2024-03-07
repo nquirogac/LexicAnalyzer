@@ -1,6 +1,7 @@
 import re
+import sys
 
-keyWords = "acadena|alogico|anumero|leer|limpiar|caso|cierto|verdadero|defecto|otro|desde|elegir|error|escribir|imprimir|poner|falso|fin|funcion|fun|hasta|imprimirf|mientras|nulo|osi|repetir|retorno|retornar|ret|romper|si|sino|tipo|rango|si|sino|fun|funcion|para|en"
+keyWords = "acadena|alogico|anumero|leer|limpiar|caso|cierto|verdadero|defecto|otro|desde|elegir|error|escribir|imprimir|poner|falso|fin|funcion|fun|hasta|imprimirf|mientras|nulo|osi|repetir|retorno|retornar|ret|romper|tipo|rango|si|sino|fun|funcion|para|en"
 
 operators = {"&&": "and", "\|\|": "or", "\.\.": "concat", "\.": "period", "\,": "comma", ";": "semicolon",":": "colon", "\{": "opening_key", "\}": "closing_key", "\[": "opening_bra", "\]": "closing_bra", "\(": "opening_par", "\)": "closing_par", "(\+\+)": "increment", "\-\-": "decrement", "%=": "mod_assign", "/=": "div_assign", "\*=": "times_assign", "-=": "minus_assign", "\+=": "plus_assign", "\+": "plus", "-": "minus", "\*": "times", "/": "div", "\^": "power", "%": "mod", "<=": "leq", ">=": "geq", "==": "equal", "!=": "neq", "<": "less", ">": "greater", "=": "assign", "!": "not", "~=": "regex"}
 operatorsKeys = "|".join(operators.keys())
@@ -11,11 +12,8 @@ multiLineCommentsRegex = r'/\*(.*?)\*/'
 numbersRegex = "\d+(\.\d+)?"
 stringRegex = r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\''
 
-file = open('example.txt', 'r')
-lines = file.readlines()
-file.close()
-linesAsText = '\n'.join(lines)
-
+linesAsText = sys.stdin.read()
+lines = linesAsText.split("\n")
 
 def maximalToken(line, flag, j, num=False):
     if (j+1 == len(line)):
@@ -36,9 +34,11 @@ def maximalToken(line, flag, j, num=False):
                 elif (re.fullmatch(numbersRegex, line[flag:j+3]))==None:
                     return True
             else:
-                if (re.match("\w", line[j+1])):
+                
+                if (re.match("\w", line[j+1])) and (re.match(r'[^\WñçáéíóúÁÉÍÓÚüÜ]', line[j+1])):
                     return False
                 else:
+                    
                     return True
     else:
         return False
@@ -72,29 +72,37 @@ def defineOperators(line, flag, j):
 
 def defineMultiLineComments(line, flag, j):
     comentarios = re.findall(multiLineCommentsRegex, linesAsText, re.DOTALL)
-    print(comentarios)
-    for comentario in comentarios:
-        if '/*' in comentario or '*/' in comentario:
-            print("Error: El comentario multilinea no está cerrado correctamente.")
-            return False
-    print("Comentarios multilinea encontrados:")
-    print(comentarios[0].replace("\n\n","\n"))
+    #print(comentarios, linesAsText)
+    if len(comentarios) == 0:
+        #print("Error: El comentario multilinea no está cerrado correctamente.")
+        return False
+    elif '/*' in comentarios[0] or '*/' in comentarios[0]:
+        #print("Error: El comentario multilinea no está cerrado correctamente.")
+        return False
+    #print("Comentarios multilinea encontrados:")
+    #print(comentarios[0].replace("\n\n","\n"))
 
     return True
 
+ignore = False
+romper = False
 for i in range(len(lines)):
     flag = 0
     line = lines[i]
+    #print("linea:", line)
     contador = 0
-    ignore = False
+    
     #print(i,line)
     if not line.strip():
         continue
+    
     for j in range(0,len(line)):    
-        #print(line[flag:j+1], flag, j, len(line))
+        #print(line[flag:j+1], flag, j, len(line), ignore)
         if (re.fullmatch(keyWords, line[flag:j+1])):           #if the token is a keyword
             #print(line[flag:j+1], flag, j, len(line))
-            if (maximalToken(line, flag, j)):
+            if ignore:
+                continue 
+            elif (maximalToken(line, flag, j)):
                 print("<"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
                 
@@ -102,28 +110,39 @@ for i in range(len(lines)):
             else:
                 continue  
         elif (re.match(commentsRegex, line[flag:j+2])):
-            print("comentario")
-            break
+            if ignore:
+                continue 
+            #print("comentario")
+            else:
+                break
         
-        elif(re.match(operatorsKeys, line[flag:j+1])):     #if the token is an operator or special character
-            #print("ddd")
-            if (re.match(r'/\*', line[flag:j+2])):
+        elif(re.match(operatorsKeys, line[flag:j+1]) or re.match(operatorsKeys, line[flag:j+2])):     #if the token is an operator or special character
+            #print(222)
+            #print(12,line[flag:j+1])
+            if (re.match(r'/\*', line[flag:j+2])) and not ignore:
                 if(not defineMultiLineComments(line, flag, j)):
-                    if(defineOperators(line, flag, j)):
-                        flag = j+1
+                    print(">>> Error lexico (linea:", str(i+1), "posicion:", str(flag+1)+")")
+                    romper = True
+                    break
                 else:
-                    print("comentario √√√√√")
+                    #print("comentario √√√√√")
+                    linesAsText = '\n'.join(linesAsText.split("\n")[1:])
                     ignore = True
-            elif (re.match(r'\*/', line[flag:j+2])) and ignore:
+            elif (re.search('\*/', line[flag:j+1])) and ignore:
+                #print("entre")
                 ignore = False
-                flag = j+2
-                
-            elif(defineOperators(line, flag, j)):
+                flag = j+1
+            
+            elif(defineOperators(line, flag, j)) and not ignore:
                 flag = j+1
             else:
+                #print("ignore")
                 continue        
-        elif (re.match(idsRegex, line[flag:j+1])):         #if the token is an identifier
-            if (maximalToken(line, flag, j)):
+        elif (re.match(idsRegex, line[flag:j+1])):   
+            if ignore:
+                continue      #if the token is an identifier
+            #print("id")
+            elif (maximalToken(line, flag, j)):
                 #print("dfs",line[flag:j+1], flag, j, len(line))
                 print("<id,"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
@@ -132,12 +151,17 @@ for i in range(len(lines)):
         
         elif (re.match(numbersRegex, line[flag:j+1])):     #if the token is a number
             #print(1,line[flag:j+1])
-            if(maximalToken(line, flag, j, True)):
+            if ignore:
+                continue 
+            elif(maximalToken(line, flag, j, True)):
                 print("<tkn_real,"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
         
-        elif len(re.findall(stringRegex, line[flag:len(line)])) > 0 and re.match((r'"|\''), line[flag]):
-            if contador==0 :
+        elif len(re.findall(stringRegex, line[flag:len(line)])) > 0 and re.match((r'"|\''), line[flag]) and not ignore:  
+            #print("cadena") 
+            if ignore:
+                continue                                          #if the token is a string
+            elif contador==0 :
                 #print("cadena")
                 if re.match((r'"|\''), line[j]) and j!=flag:
                     flag = flag + len(foundStrings[0])
@@ -146,6 +170,7 @@ for i in range(len(lines)):
                     cadena = foundStrings[0]
                     #print(foundStrings)
                     cadena = re.sub(r'\\\'', "'", cadena)
+                    cadena = re.sub(r'\\\"', '"', cadena)
                     cadena = cadena[1:-1]
                     contador = len(foundStrings[0])-2
                     #print("contador",contador)
@@ -154,11 +179,20 @@ for i in range(len(lines)):
             else:
                 contador = contador - 1
                 #print("contador 2 -",contador)
-              
         
-
-        elif (j+1 < len(line) ):                           #if the token is a space
-            if (line[j] == " "):  
-                flag = j+1
-
+        elif (j+1 <= len(line)) and ((line[j] == " ") or (line[j] == "\t") or (line[j] == "\n")):                           #if the token is a space
+            #print("espacio")
+            flag = j+1
+        
+        else:
+            print(">>> Error lexico (linea:", str(i+1), "posicion:", str(flag+1)+")")
+            romper = True
+            break
     linesAsText = '\n'.join(linesAsText.split("\n")[1:])
+    if linesAsText.split("\n")[0] == "" or linesAsText.split("\n")[0] == "\n":
+        linesAsText = '\n'.join(linesAsText.split("\n")[1:])
+    #print(linesAsText.split("\n"))
+    #print("texto:", linesAsText)
+    
+    if romper:
+        break

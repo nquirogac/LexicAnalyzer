@@ -7,14 +7,15 @@ operatorsKeys = "|".join(operators.keys())
 
 idsRegex = "^[a-zA-Z_][a-zA-Z0-9_]*" 
 commentsRegex = "//|#"
-multiLineCommentsRegex = "^(/*)."
+multiLineCommentsRegex = r'/\*(.*?)\*/'
 numbersRegex = "\d+(\.\d+)?"
 stringRegex = r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\''
-
 
 file = open('example.txt', 'r')
 lines = file.readlines()
 file.close()
+linesAsText = '\n'.join(lines)
+
 
 def maximalToken(line, flag, j, num=False):
     if (j+1 == len(line)):
@@ -24,7 +25,7 @@ def maximalToken(line, flag, j, num=False):
                 return True
             elif (line[j+1] == "\n"): 
                 return True     
-            elif (re.match(operatorsKeys, line[j+1]) and not num):
+            elif ((re.match(operatorsKeys, line[j+1]) or re.match(commentsRegex, line[j+1:j+2])) and not num):
                 return True
             elif(num):
                 #print(line[flag:j+2], line[j+1])
@@ -34,12 +35,17 @@ def maximalToken(line, flag, j, num=False):
                     return True 
                 elif (re.fullmatch(numbersRegex, line[flag:j+3]))==None:
                     return True
+            else:
+                if (re.match("\w", line[j+1])):
+                    return False
+                else:
+                    return True
     else:
         return False
 
 def findOperators(line, flag, j):
     for key in operators:
-        if(re.match(key, line[flag:j+1])):
+        if(re.fullmatch(key, line[flag:j+1])):
             print("<tkn_"+operators[key]+","+str(i+1)+","+str(flag+1)+">")
               
 def defineOperators(line, flag, j):
@@ -48,6 +54,7 @@ def defineOperators(line, flag, j):
         findOperators(line, flag, j)
         return True
     elif (j+1 <= len(line) and ((line[j+1] == " ") or (line[j+1] == "\n") or (j+1 == len(line)))):              #if the token is a space
+       
         findOperators(line, flag, j)
         return True
     elif (re.match(commentsRegex, line[flag:j+2])): 
@@ -57,21 +64,35 @@ def defineOperators(line, flag, j):
         findOperators(line, flag, j) 
         return True  
     elif (re.fullmatch(operatorsKeys, line[flag:j+2])==None):
+        
         findOperators(line, flag, j) 
         return True 
     else:
         return False       
 
+def defineMultiLineComments(line, flag, j):
+    comentarios = re.findall(multiLineCommentsRegex, linesAsText, re.DOTALL)
+    print(comentarios)
+    for comentario in comentarios:
+        if '/*' in comentario or '*/' in comentario:
+            print("Error: El comentario multilinea no está cerrado correctamente.")
+            return False
+    print("Comentarios multilinea encontrados:")
+    print(comentarios[0].replace("\n\n","\n"))
+
+    return True
+
 for i in range(len(lines)):
     flag = 0
     line = lines[i]
+    contador = 0
+    ignore = False
     #print(i,line)
     if not line.strip():
         continue
-    for j in range(0,len(line)):
-        
+    for j in range(0,len(line)):    
         #print(line[flag:j+1], flag, j, len(line))
-        if (re.match(keyWords, line[flag:j+1])):           #if the token is a keyword
+        if (re.fullmatch(keyWords, line[flag:j+1])):           #if the token is a keyword
             #print(line[flag:j+1], flag, j, len(line))
             if (maximalToken(line, flag, j)):
                 print("<"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
@@ -86,7 +107,18 @@ for i in range(len(lines)):
         
         elif(re.match(operatorsKeys, line[flag:j+1])):     #if the token is an operator or special character
             #print("ddd")
-            if(defineOperators(line, flag, j)):
+            if (re.match(r'/\*', line[flag:j+2])):
+                if(not defineMultiLineComments(line, flag, j)):
+                    if(defineOperators(line, flag, j)):
+                        flag = j+1
+                else:
+                    print("comentario √√√√√")
+                    ignore = True
+            elif (re.match(r'\*/', line[flag:j+2])) and ignore:
+                ignore = False
+                flag = j+2
+                
+            elif(defineOperators(line, flag, j)):
                 flag = j+1
             else:
                 continue        
@@ -104,9 +136,29 @@ for i in range(len(lines)):
                 print("<tkn_real,"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
         
+        elif len(re.findall(stringRegex, line[flag:len(line)])) > 0 and re.match((r'"|\''), line[flag]):
+            if contador==0 :
+                #print("cadena")
+                if re.match((r'"|\''), line[j]) and j!=flag:
+                    flag = flag + len(foundStrings[0])
+                else:
+                    foundStrings = re.findall(stringRegex, line[flag:len(line)])
+                    cadena = foundStrings[0]
+                    #print(foundStrings)
+                    cadena = re.sub(r'\\\'', "'", cadena)
+                    cadena = cadena[1:-1]
+                    contador = len(foundStrings[0])-2
+                    #print("contador",contador)
+                    
+                    print("<tkn_str,"+cadena+","+str(i+1)+","+str(flag+1)+">")
+            else:
+                contador = contador - 1
+                #print("contador 2 -",contador)
+              
         
-        
+
         elif (j+1 < len(line) ):                           #if the token is a space
             if (line[j] == " "):  
                 flag = j+1
-     
+
+    linesAsText = '\n'.join(linesAsText.split("\n")[1:])

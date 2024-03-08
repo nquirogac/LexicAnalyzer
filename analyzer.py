@@ -121,20 +121,22 @@ for i in range(len(lines)):
             #print(12,line[flag:j+1])
             if (re.match(r'/\*', line[flag:j+2])) and not ignore:
                 if(not defineMultiLineComments(line, flag, j)):
-                    print(">>> Error lexico (linea:", str(i+1), "posicion:", str(flag+1)+")")
+                    print(">>> Error lexico (linea:", str(i+1)+ ", posicion:", str(flag+1)+")")
                     romper = True
                     break
                 else:
                     #print("comentario √√√√√")
                     linesAsText = '\n'.join(linesAsText.split("\n")[1:])
                     ignore = True
+                    flag = j+1
             elif (re.search('\*/', line[flag:j+1])) and ignore:
                 #print("entre")
                 ignore = False
                 flag = j+1
             
-            elif(defineOperators(line, flag, j)) and not ignore:
-                flag = j+1
+            elif not ignore:
+                if defineOperators(line, flag, j):
+                    flag = j+1
             else:
                 #print("ignore")
                 continue        
@@ -185,7 +187,7 @@ for i in range(len(lines)):
             flag = j+1
         
         else:
-            print(">>> Error lexico (linea:", str(i+1), "posicion:", str(flag+1)+")")
+            print(">>> Error lexico (linea:", str(i+1)+ ", posicion:", str(flag+1)+")")
             romper = True
             break
     linesAsText = '\n'.join(linesAsText.split("\n")[1:])

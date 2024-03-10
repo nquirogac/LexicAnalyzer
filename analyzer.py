@@ -26,7 +26,7 @@ def maximalToken(line, flag, j, num=False):
         elif ((re.match(operatorsKeys, line[j+1]) or re.match(commentsRegex, line[j+1:j+2])) and not num):
             return True
         elif(num):
-                #print(line[flag:j+2], line[j+1])
+                
             if (re.match("\d", line[j+1])):
                 return False
             elif (re.match("\.", line[j+1])) and maximalToken(line, flag, j+1, True):
@@ -48,7 +48,7 @@ def findOperators(line, flag, j):
             print("<tkn_"+operators[key]+","+str(i+1)+","+str(flag+1)+">")
               
 def defineOperators(line, flag, j):
-    #print(1,line[flag:j+1], flag, j, len(line))
+    
     if (j+1 == len(line)):
         findOperators(line, flag, j)
         return True
@@ -71,16 +71,10 @@ def defineOperators(line, flag, j):
 
 def defineMultiLineComments(line, flag, j):
     comentarios = re.findall(multiLineCommentsRegex, linesAsText, re.DOTALL)
-    #print(comentarios, linesAsText)
-    if len(comentarios) == 0:
-        #print("Error: El comentario multilinea no está cerrado correctamente.")
+    if len(comentarios) == 0:    
         return False
-    elif '/*' in comentarios[0] or '*/' in comentarios[0]:
-        #print("Error: El comentario multilinea no está cerrado correctamente.")
+    elif '/*' in comentarios[0] or '*/' in comentarios[0]:     
         return False
-    #print("Comentarios multilinea encontrados:")
-    #print(comentarios[0].replace("\n\n","\n"))
-
     return True
 
 ignore = False
@@ -88,35 +82,31 @@ romper = False
 for i in range(len(lines)):
     flag = 0
     line = lines[i]
-    #print("linea:", line)
     contador = 0
     
-    #print(i,line)
     if not line.strip():
         continue
     
     for j in range(0,len(line)):    
-        #print(line[flag:j+1], flag, j, len(line), ignore)
+        
         if (re.fullmatch(keyWords, line[flag:j+1])):           #if the token is a keyword
-            #print(line[flag:j+1], flag, j, len(line))
+            
             if ignore:
                 continue 
             elif (maximalToken(line, flag, j)):
                 print("<"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
                 
-                #print(flag,j, len(line))
             else:
                 continue  
-        elif (re.match(commentsRegex, line[flag:j+2])):
+        elif (re.match(commentsRegex, line[flag:j+2])):         #if the token is a comment
             if ignore:
                 continue 
-            #print("comentario")
+            
             else:
                 break
         elif(re.match(operatorsKeys, line[flag:j+1]) or re.match(operatorsKeys, line[flag:j+2]) or ignore):     #if the token is an operator or special character
-            #print(222)
-            #print(12,line[flag:j+1])
+            
             if (re.match(r'/\*', line[flag:j+2])) and not ignore:
                 if(not defineMultiLineComments(line, flag, j)):
                     
@@ -124,39 +114,36 @@ for i in range(len(lines)):
                     romper = True
                     break
                 else:
-                    #print("comentario √√√√√")
+                    
                     linesAsText = '\n'.join(linesAsText.split("\n")[1:])
                     ignore = True
                     flag = j+1
             elif (re.search('\*/', line[flag:j+1])) and ignore:
-                #print("entre")
                 ignore = False
                 flag = j+1
-            elif (re.match(r'\*/', line[flag:j+2])) and not ignore:
-                print(">>> Error lexico (linea:", str(i+1)+ ", posicion:", str(flag+1)+")")
-                romper = True
-                break
+            #elif (re.match(r'\*/', line[flag:j+2])) and not ignore:
+                
+                #romper = True
+                #break
             elif not ignore:
                 if defineOperators(line, flag, j):
                     flag = j+1
             else:
-                #print("ignore")
+                
                 continue        
         
         elif (re.match(idsRegex, line[flag:j+1])):                  #if the token is an identifier
-            #print("id")
+            
             if ignore:
                 continue      
             elif (maximalToken(line, flag, j)):
-                #print("dfs",line[flag:j+1], flag, j, len(line))
+                
                 print("<id,"+line[flag:j+1]+","+str(i+1)+","+str(flag+1)+">")
                 flag = j+1
             else:
                 continue
-        
-        
         elif (re.match(numbersRegex, line[flag:j+1])):     #if the token is a number
-            #print(1,line[flag:j+1])
+            
             if ignore:
                 continue 
             elif(maximalToken(line, flag, j, True)):
@@ -164,30 +151,31 @@ for i in range(len(lines)):
                 flag = j+1
         
         elif len(re.findall(stringRegex, line[flag:len(line)])) > 0 and re.match((r'"|\''), line[flag]) and not ignore:  #if the token is a string
-            #print("cadena") 
+            
             if ignore:
                 continue                                          
             elif contador==0 :
-                #print("cadena")
+                
                 if re.match((r'"|\''), line[j]) and j!=flag:
                     flag = flag + len(foundStrings[0])
                 else:
                     foundStrings = re.findall(stringRegex, line[flag:len(line)])
                     cadena = foundStrings[0]
-                    #print(foundStrings)
-                    cadena = re.sub(r'\\\'', "'", cadena)
-                    cadena = re.sub(r'\\\"', '"', cadena)
+                    
+                    if re.match('"', line[flag]):
+                        cadena = re.sub(r'\\\'', "'", cadena)
+                    elif re.match('\'', line[flag]):
+                        cadena = re.sub(r'\\\"', '"', cadena)
                     cadena = cadena[1:-1]
                     contador = len(foundStrings[0])-2
-                    #print("contador",contador)
-                    
                     print("<tkn_str,"+cadena+","+str(i+1)+","+str(flag+1)+">")
+
             else:
                 contador = contador - 1
-                #print("contador 2 -",contador)
+                
         
         elif (j+1 <= len(line)) and ((line[j] == " ") or (line[j] == "\t") or (line[j] == "\n")):                           #if the token is a space
-            #print("espacio")
+            
             flag = j+1
         
         else:
